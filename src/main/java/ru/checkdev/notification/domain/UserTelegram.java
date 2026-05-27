@@ -1,6 +1,10 @@
 package ru.checkdev.notification.domain;
 
-import jakarta.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,6 +19,7 @@ import lombok.NoArgsConstructor;
 public class UserTelegram implements Base {
     @EqualsAndHashCode.Include
     @Id
+    @jakarta.persistence.Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @Column(name = "user_id", nullable = false, unique = true)
