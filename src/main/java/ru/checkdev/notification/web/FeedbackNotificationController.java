@@ -6,17 +6,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.checkdev.notification.dto.FeedbackNotificationDTO;
-import ru.checkdev.notification.service.NotificationMessagesService;
+import ru.checkdev.notification.service.NotificationEventService;
 
 @RestController
 @RequestMapping("/feedback")
 @AllArgsConstructor
 public class FeedbackNotificationController {
 
-    private final NotificationMessagesService notificationMessagesService;
+    private final NotificationEventService notificationEventService;
 
     @PostMapping("/interview")
     public void sendFeedbackNotification(@RequestBody FeedbackNotificationDTO feedbackNotification) {
-        notificationMessagesService.sendFeedbackNotification(feedbackNotification);
+        notificationEventService.sendFeedbackNotification(feedbackNotification);
     }
 }

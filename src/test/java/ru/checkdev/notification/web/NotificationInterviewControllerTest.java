@@ -55,6 +55,7 @@ class NotificationInterviewControllerTest {
     private MessagesGenerator messagesGenerator;
     private NotificationInterviewController notifyController;
     private InnerMessageService innerMessageService;
+    private NotificationEventService notificationEventService;
 
     @BeforeEach
     void setUp() {
@@ -62,8 +63,10 @@ class NotificationInterviewControllerTest {
         messagesGenerator = new MessagesGenerator(uriProvider);
         innerMessageService = new InnerMessageService(
                 innerMessageRepositoryFake, userTelegramService, uriProvider);
-        notifyController = new NotificationInterviewController(
-                userTelegramService, innerMessageService, notificationMessage, messagesGenerator);
+        notificationEventService = new NotificationEventService(
+                userTelegramService, innerMessageService, notificationMessage, messagesGenerator,
+                null, null, null);
+        notifyController = new NotificationInterviewController(notificationEventService);
     }
 
     @Test

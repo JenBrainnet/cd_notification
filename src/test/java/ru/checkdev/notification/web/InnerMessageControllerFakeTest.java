@@ -23,7 +23,7 @@ public class InnerMessageControllerFakeTest {
         InnerMessageService innerMessageService = new InnerMessageService(
                 new InnerMessageRepositoryFake(), null, uriProvider);
         InnerMessageController controller = new InnerMessageController(
-                innerMessageService, null, null, null);
+                innerMessageService, null);
 
         InnerMessage savedMsg = innerMessageService.saveMessage(botMessage);
         List<InnerMessage> resp = controller.findMessage(savedMsg.getUserId()).getBody();

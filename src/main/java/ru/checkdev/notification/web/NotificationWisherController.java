@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.checkdev.notification.dto.WisherApprovedDTO;
-import ru.checkdev.notification.service.NotificationMessagesService;
+import ru.checkdev.notification.service.NotificationEventService;
 
 
 @Tag(name = "NotificationApprovedWisherController", description = "NotificationApprovedWisher REST API")
@@ -16,11 +16,11 @@ import ru.checkdev.notification.service.NotificationMessagesService;
 @AllArgsConstructor
 public class NotificationWisherController {
 
-    private final NotificationMessagesService notificationMessagesService;
+    private final NotificationEventService notificationEventService;
 
     @PostMapping("/approvedWisher/")
     public void sendMessageApprovedWisher(
             @RequestBody WisherApprovedDTO wisherApprovedNotifyDTO) {
-        notificationMessagesService.sendApprovedNotification(wisherApprovedNotifyDTO);
+        notificationEventService.sendMessageApprovedWisher(wisherApprovedNotifyDTO);
     }
 }
