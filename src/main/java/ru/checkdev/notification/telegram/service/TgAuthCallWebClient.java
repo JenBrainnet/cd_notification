@@ -1,5 +1,7 @@
 package ru.checkdev.notification.telegram.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ru.checkdev.notification.domain.Profile;
-import ru.checkdev.notification.service.Retry;
 
 /**
  * Класс реализует методы get и post для отправки сообщений через WebClient
@@ -20,24 +21,18 @@ import ru.checkdev.notification.service.Retry;
 @NoArgsConstructor
 @Slf4j
 public class TgAuthCallWebClient implements TgCall {
+    private static final String RETRY = "tgAuthRetry";
+    private static final String CIRCUIT_BREAKER = "tgAuthCircuitBreaker";
     @Value("${server.auth}")
     private String urlServiceAuth;
-    @Value("${retry.retries:3}")
-    private int retries;
-    @Value("${retry.delay:1000}")
-    private long delay;
     private WebClient webClient;
 
-    public TgAuthCallWebClient(String urlServiceAuth, int retries, long delay) {
+    public TgAuthCallWebClient(String urlServiceAuth) {
         this.urlServiceAuth = urlServiceAuth;
-        this.retries = retries;
-        this.delay = delay;
     }
 
-    public TgAuthCallWebClient(WebClient webClient, int retries, long delay) {
+    public TgAuthCallWebClient(WebClient webClient) {
         this.webClient = webClient;
-        this.retries = retries;
-        this.delay = delay;
     }
 
     /**
@@ -47,13 +42,15 @@ public class TgAuthCallWebClient implements TgCall {
      * @return Mono<Person>
      */
     @Override
+    @Retry(name = RETRY)
+    @CircuitBreaker(name = CIRCUIT_BREAKER, fallbackMethod = "fallbackGet")
     public Mono<Profile> doGet(String url) {
-        return Mono.fromCallable(() -> retry().exec(() -> webClient()
-                        .get()
-                        .uri(url)
-                        .retrieve()
-                        .bodyToMono(Profile.class)
-                        .block(), null));
+        return webClient()
+                .get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(Profile.class)
+                .doOnError(err -> log.error("API not found: {}", err.getMessage()));
     }
 
     /**
@@ -64,28 +61,43 @@ public class TgAuthCallWebClient implements TgCall {
      * @return Mono<Person>
      */
     @Override
+    @Retry(name = RETRY)
+    @CircuitBreaker(name = CIRCUIT_BREAKER, fallbackMethod = "fallbackPost")
     public Mono<Object> doPost(String url, Profile profile) {
-        return Mono.fromCallable(() -> retry().exec(() -> webClient()
-                        .post()
-                        .uri(url)
-                        .bodyValue(profile)
-                        .retrieve()
-                        .bodyToMono(Object.class)
-                        .block(), null));
+        return webClient()
+                .post()
+                .uri(url)
+                .bodyValue(profile)
+                .retrieve()
+                .bodyToMono(Object.class)
+                .doOnError(err -> log.error("API not found: {}", err.getMessage()));
     }
 
     @Override
+    @Retry(name = RETRY)
+    @CircuitBreaker(name = CIRCUIT_BREAKER, fallbackMethod = "fallbackPost")
     public Mono<Object> doPost(String url) {
-        return Mono.fromCallable(() -> retry().exec(() -> webClient()
-                        .post()
-                        .uri(url)
-                        .retrieve()
-                        .bodyToMono(Object.class)
-                        .block(), null));
+        return webClient()
+                .post()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(Object.class)
+                .doOnError(err -> log.error("API not found: {}", err.getMessage()));
     }
 
-    private Retry retry() {
-        return new Retry(retries, delay);
+    public Mono<Profile> fallbackGet(String url, Throwable throwable) {
+        log.error("GET request failed, fallback triggered: {}", throwable.getMessage());
+        return Mono.empty();
+    }
+
+    public Mono<Object> fallbackPost(String url, Profile profile, Throwable throwable) {
+        log.error("POST request failed, fallback triggered: {}", throwable.getMessage());
+        return Mono.empty();
+    }
+
+    public Mono<Object> fallbackPost(String url, Throwable throwable) {
+        log.error("POST request failed, fallback triggered: {}", throwable.getMessage());
+        return Mono.empty();
     }
 
     private WebClient webClient() {
